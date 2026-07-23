@@ -8,7 +8,9 @@ class PacketParser
 {
 public:
 
-    bool parse(const std::string& filename);
+    bool parse(
+        const std::string& captureFile,
+        const std::string& outputFile);
 
 private:
 

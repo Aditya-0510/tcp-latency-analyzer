@@ -4,11 +4,11 @@
 
 int main(int argc, char* argv[])
 {
-    if (argc != 2)
+    if (argc != 3)
     {
         std::cout
             << "Usage:\n"
-            << "tcp_latency <capture.pcap>"
+            << "tcp_latency <capture.pcap> <analysis.json>"
             << std::endl;
 
         return 1;
@@ -16,7 +16,10 @@ int main(int argc, char* argv[])
 
     PacketParser parser;
 
-    parser.parse(argv[1]);
+    if (!parser.parse(argv[1], argv[2]))
+    {
+        return 1;
+    }
 
     return 0;
 }

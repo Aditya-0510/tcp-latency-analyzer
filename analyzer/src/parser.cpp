@@ -11,7 +11,9 @@
 
 #include <iostream>
 
-bool PacketParser::parse(const std::string& filename)
+bool PacketParser::parse(
+    const std::string& filename,
+    const std::string& outputFile)
 {
     char errorBuffer[PCAP_ERRBUF_SIZE];
 
@@ -86,6 +88,37 @@ bool PacketParser::parse(const std::string& filename)
             FlowProcessResult flowResult =
                 flowManager.process(packet);
 
+            PacketRecord record;
+
+            record.packetNumber = packet.packetNumber;
+            record.srcIp = packet.srcIp;
+            record.dstIp = packet.dstIp;
+            record.srcPort = packet.srcPort;
+            record.dstPort = packet.dstPort;
+
+            record.sequenceNumber = packet.sequenceNumber;
+            record.acknowledgementNumber = packet.acknowledgementNumber;
+
+            record.payloadLength = packet.payloadLength;
+
+            record.syn = packet.syn;
+            record.ack = packet.ack;
+            record.fin = packet.fin;
+            record.rst = packet.rst;
+            record.psh = packet.psh;
+            record.urg = packet.urg;
+
+            record.retransmission = flowResult.retransmission;
+            record.duplicateAck = flowResult.duplicateAck;
+
+            if (!flowResult.matches.empty())
+            {
+                record.matched = true;
+                record.latency = flowResult.matches.front().latency * 1000.0;
+
+            }
+            statistics.addPacket(record);
+
             if (flowResult.retransmission)
             {
                 statistics.recordRetransmission();
@@ -118,6 +151,7 @@ bool PacketParser::parse(const std::string& filename)
 
     pcap_close(handle);
     statistics.print();
+    statistics.exportJson(outputFile);
 
     return true;
 }

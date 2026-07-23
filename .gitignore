@@ -1,2 +1,6 @@
 build
 test
+.env
+node_modules
+backend/src/uploads
+backend/src/results

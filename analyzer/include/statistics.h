@@ -1,9 +1,12 @@
 #pragma once
 
 #include "ack_match.h"
+#include "packet_record.h"
 
 #include <cstdint>
 #include <limits>
+#include <string>
+#include <vector>
 
 class Statistics
 {
@@ -11,11 +14,8 @@ public:
 
     void add(const AckMatch& match);
 
-    /*
-     * Call once per successfully parsed TCP packet, before
-     * flow processing, to keep the packet-level counters
-     * in sync with everything that came through the parser.
-     */
+    void addPacket(const PacketRecord& packet);
+
     void recordPacket(bool isData, bool isPureAck);
 
     void recordRetransmission();
@@ -24,10 +24,15 @@ public:
 
     void print() const;
 
+    void exportJson(const std::string& filename) const;
+
 private:
 
-    // Latency stats (ACK-matched packets only)
+    // Store all matched packets for JSON export
+    std::vector<PacketRecord> packets;
+    std::vector<AckMatch> matches;
 
+    // Latency statistics
     uint64_t matchedPackets = 0;
 
     double minLatency =
@@ -37,8 +42,7 @@ private:
 
     double totalLatency = 0.0;
 
-    // Packet-level counters
-
+    // Packet statistics
     uint64_t totalTcpPackets = 0;
 
     uint64_t dataPackets = 0;

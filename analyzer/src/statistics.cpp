@@ -2,9 +2,16 @@
 
 #include <iostream>
 #include <iomanip>
+#include <fstream>
+#include <iomanip>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 void Statistics::add(const AckMatch& match)
 {
+    matches.push_back(match);
+
     matchedPackets++;
 
     if (match.latency < minLatency)
@@ -104,4 +111,60 @@ void Statistics::print() const
               << " ms\n";
 
     std::cout << "=========================================\n";
+}
+
+void Statistics::exportJson(const std::string& filename) const
+{
+    json report;
+
+    report["summary"] =
+    {
+        { "totalTcpPackets", totalTcpPackets },
+        { "dataPackets", dataPackets },
+        { "pureAckPackets", pureAckPackets },
+        { "matchedPackets", matchedPackets },
+        { "retransmissions", retransmissions },
+        { "duplicateAcks", duplicateAcks },
+        { "minimumLatency", matchedPackets ? minLatency * 1000.0 : 0.0 },
+        { "maximumLatency", matchedPackets ? maxLatency * 1000.0 : 0.0 },
+        { "averageLatency", matchedPackets ? (totalLatency / matchedPackets) * 1000.0 : 0.0 }
+    };
+
+    report["packets"] = json::array();
+
+    for (const auto& packet : packets)
+    {
+        report["packets"].push_back({
+            {"packetNumber", packet.packetNumber},
+            {"srcIp", packet.srcIp},
+            {"dstIp", packet.dstIp},
+            {"srcPort", packet.srcPort},
+            {"dstPort", packet.dstPort},
+            {"sequenceNumber", packet.sequenceNumber},
+            {"acknowledgementNumber", packet.acknowledgementNumber},
+            {"payloadLength", packet.payloadLength},
+            {"matched", packet.matched},
+            {"latency", packet.latency},
+            {"retransmission", packet.retransmission},
+            {"duplicateAck", packet.duplicateAck},
+            {"syn", packet.syn},
+            {"ack", packet.ack},
+            {"fin", packet.fin},
+            {"rst", packet.rst},
+            {"psh", packet.psh},
+            {"urg", packet.urg}
+        });
+    }
+
+    std::ofstream out(filename);
+
+    if (out.is_open())
+    {
+        out << std::setw(4) << report;
+    }
+}
+
+void Statistics::addPacket(const PacketRecord& packet)
+{
+    packets.push_back(packet);
 }

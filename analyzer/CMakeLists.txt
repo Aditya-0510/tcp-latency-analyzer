@@ -6,6 +6,24 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# ============================================================
+# nlohmann/json
+# ============================================================
+
+include(FetchContent)
+
+FetchContent_Declare(
+    json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG v3.11.3
+)
+
+FetchContent_MakeAvailable(json)
+
+# ============================================================
+# Executable
+# ============================================================
+
 add_executable(
     tcp_latency
     src/main.cpp
@@ -20,9 +38,16 @@ target_include_directories(
     include
 )
 
+target_link_libraries(
+    tcp_latency
+    PRIVATE
+    nlohmann_json::nlohmann_json
+)
+
 # ============================================================
 # Windows (Npcap)
 # ============================================================
+
 if(WIN32)
 
     # >>> CHANGE THIS TO YOUR Npcap SDK LOCATION <<<
@@ -59,6 +84,7 @@ if(WIN32)
 # ============================================================
 # Linux (libpcap)
 # ============================================================
+
 else()
 
     find_package(PkgConfig REQUIRED)

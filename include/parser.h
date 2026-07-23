@@ -7,9 +7,11 @@
 class PacketParser
 {
 public:
+
     bool parse(const std::string& filename);
 
 private:
+
     bool parsePacket(
         const unsigned char* data,
         unsigned int length,

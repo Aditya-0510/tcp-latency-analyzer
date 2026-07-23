@@ -1,22 +1,25 @@
 #pragma once
 
-#include <cstdint>
+#include "ack_match.h"
 
-struct Statistics
+#include <limits>
+
+class Statistics
 {
-    uint64_t totalPackets = 0;
+public:
 
-    uint64_t tcpPackets = 0;
+    void add(const AckMatch& match);
 
-    uint64_t dataPackets = 0;
+    void print() const;
 
-    uint64_t ackPackets = 0;
+private:
 
-    uint64_t matchedAcks = 0;
+    uint64_t matchedPackets = 0;
 
-    double totalDelay = 0;
+    double minLatency =
+        std::numeric_limits<double>::max();
 
-    double minimumDelay = 0;
+    double maxLatency = 0.0;
 
-    double maximumDelay = 0;
+    double totalLatency = 0.0;
 };

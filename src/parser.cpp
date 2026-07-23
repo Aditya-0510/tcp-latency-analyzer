@@ -1,6 +1,8 @@
 #include "parser.h"
 #include "packet.h"
 #include "protocols.h"
+#include "flow_manager.h"
+#include "statistics.h"
 
 #include <pcap.h>
 
@@ -30,6 +32,11 @@ bool PacketParser::parse(const std::string& filename)
               << std::endl
               << std::endl;
 
+    std::cout << "Datalink: " << pcap_datalink(handle) << std::endl;
+
+    FlowManager flowManager;
+    Statistics statistics;
+
     struct pcap_pkthdr* header;
     const u_char* rawPacket;
 
@@ -55,6 +62,21 @@ bool PacketParser::parse(const std::string& filename)
                 packet))
         {
             printPacket(packet);
+
+            auto matches = flowManager.process(packet);
+
+           for (const auto& match : matches)
+            {
+                statistics.add(match);
+
+                std::cout
+                    << "ACK matched Packet #"
+                    << match.packetNumber
+                    << "  Latency = "
+                    << match.latency * 1000
+                    << " ms"
+                    << std::endl;
+            }
         }
     }
 
@@ -64,6 +86,7 @@ bool PacketParser::parse(const std::string& filename)
               << std::endl;
 
     pcap_close(handle);
+    statistics.print();
 
     return true;
 }
@@ -85,16 +108,39 @@ bool PacketParser::parsePacket(
     const EthernetHeader* ethernet =
         reinterpret_cast<const EthernetHeader*>(data);
 
-    if (ntohs(ethernet->etherType) != 0x0800)
+    unsigned int offset = sizeof(EthernetHeader);
+    uint16_t etherType = ntohs(ethernet->etherType);
+
+    //----------------------------------------------------
+    // Handle 802.1Q / Q-in-Q VLAN tags
+    //----------------------------------------------------
+
+    while (etherType == 0x8100 || etherType == 0x88A8)
+    {
+        if (length < offset + 4)
+            return false;
+
+        // 2 bytes tag control info + 2 bytes real etherType
+        etherType =
+            ntohs(*reinterpret_cast<const uint16_t*>(
+                data + offset + 2));
+
+        offset += 4;
+    }
+
+    if (etherType != 0x0800)
         return false;
 
     //----------------------------------------------------
     // IPv4
     //----------------------------------------------------
 
+    if (length < offset + sizeof(IPv4Header))
+        return false;
+
     const IPv4Header* ip =
         reinterpret_cast<const IPv4Header*>(
-            data + sizeof(EthernetHeader));
+            data + offset);
 
     unsigned int ipHeaderLength =
         (ip->versionIhl & 0x0F) * 4;
@@ -106,10 +152,13 @@ bool PacketParser::parsePacket(
     // TCP
     //----------------------------------------------------
 
+    if (length < offset + ipHeaderLength + sizeof(TCPHeader))
+        return false;
+
     const TCPHeader* tcp =
         reinterpret_cast<const TCPHeader*>(
             data +
-            sizeof(EthernetHeader) +
+            offset +
             ipHeaderLength);
 
     unsigned int tcpHeaderLength =
@@ -120,7 +169,6 @@ bool PacketParser::parsePacket(
     //----------------------------------------------------
 
     packet.packetNumber = packetNumber;
-
     packet.timestamp = timestamp;
 
     char ipBuffer[INET_ADDRSTRLEN];
@@ -141,23 +189,27 @@ bool PacketParser::parsePacket(
 
     packet.dstIp = ipBuffer;
 
-    packet.srcPort =
-        ntohs(tcp->sourcePort);
+    packet.srcPort = ntohs(tcp->sourcePort);
+    packet.dstPort = ntohs(tcp->destinationPort);
 
-    packet.dstPort =
-        ntohs(tcp->destinationPort);
+    packet.sequenceNumber = ntohl(tcp->sequenceNumber);
+    packet.acknowledgementNumber = ntohl(tcp->acknowledgementNumber);
 
-    packet.sequenceNumber =
-        ntohl(tcp->sequenceNumber);
+    //----------------------------------------------------
+    // Payload length — derived from actual captured bytes,
+    // not the IP header's totalLength field (which can be
+    // wrong/absent under TSO/LSO offload).
+    //----------------------------------------------------
 
-    packet.acknowledgementNumber =
-        ntohl(tcp->acknowledgementNumber);
-
-    packet.payloadLength =
-        length -
-        sizeof(EthernetHeader) -
-        ipHeaderLength -
+    unsigned int headersLength =
+        offset +
+        ipHeaderLength +
         tcpHeaderLength;
+
+    if (length < headersLength)
+        return false;
+
+    packet.payloadLength = length - headersLength;
 
     packet.syn = tcp->flags & 0x02;
     packet.ack = tcp->flags & 0x10;

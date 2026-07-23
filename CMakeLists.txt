@@ -10,6 +10,8 @@ add_executable(
     tcp_latency
     src/main.cpp
     src/parser.cpp
+    src/flow_manager.cpp
+    src/statistics.cpp
 )
 
 target_include_directories(

@@ -1,26 +1,25 @@
 #pragma once
 
-#include <unordered_map>
-#include <string>
+#include "ack_match.h"
+#include "flow.h"
+#include "packet.h"
 
-struct OutstandingPacket
+#include <map>
+#include <vector>
+
+class FlowManager
 {
-    uint64_t packetNumber;
+public:
 
-    double timestamp;
+    std::vector<AckMatch> process(const TcpPacket& packet);
 
-    uint32_t expectedAck;
-};
+private:
 
-struct FlowKey
-{
-    std::string endpointA;
-    std::string endpointB;
+    std::map<FlowKey, TcpFlow> flows;
 
-    bool operator==(const FlowKey& other) const;
-};
+    FlowKey createFlowKey(const TcpPacket& packet);
 
-struct Flow
-{
-    std::unordered_map<uint32_t, OutstandingPacket> waitingAck;
+    bool isForwardPacket(
+        const FlowKey& key,
+        const TcpPacket& packet);
 };

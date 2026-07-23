@@ -20,12 +20,59 @@ void Statistics::add(const AckMatch& match)
     totalLatency += match.latency;
 }
 
+void Statistics::recordPacket(bool isData, bool isPureAck)
+{
+    totalTcpPackets++;
+
+    if (isData)
+    {
+        dataPackets++;
+    }
+
+    if (isPureAck)
+    {
+        pureAckPackets++;
+    }
+}
+
+void Statistics::recordRetransmission()
+{
+    retransmissions++;
+}
+
+void Statistics::recordDuplicateAck()
+{
+    duplicateAcks++;
+}
+
 void Statistics::print() const
 {
     std::cout << "\n";
     std::cout << "=========================================\n";
     std::cout << "        TCP ACK LATENCY REPORT\n";
     std::cout << "=========================================\n";
+
+    std::cout << "Total TCP Packets : "
+              << totalTcpPackets
+              << "\n";
+
+    std::cout << "Data Packets : "
+              << dataPackets
+              << "\n";
+
+    std::cout << "Pure ACK Packets : "
+              << pureAckPackets
+              << "\n";
+
+    std::cout << "Retransmissions : "
+              << retransmissions
+              << "\n";
+
+    std::cout << "Duplicate ACKs : "
+              << duplicateAcks
+              << "\n";
+
+    std::cout << "-----------------------------------------\n";
 
     std::cout << "Matched Packets : "
               << matchedPackets

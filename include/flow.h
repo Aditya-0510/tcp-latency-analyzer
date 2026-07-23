@@ -68,6 +68,22 @@ struct TcpStream
     uint32_t duplicateAckCount = 0;
 
     uint64_t retransmissions = 0;
+
+    /*
+     * Highest sequence number (in this stream's send direction)
+     * known to have been acknowledged by the peer so far.
+     *
+     * Used to detect spurious retransmissions of data that was
+     * already fully acknowledged, which the 'outstanding' map
+     * alone cannot catch since such entries are already erased
+     * by the time the resend arrives.
+     *
+     * Comparisons against this value must use wraparound-safe
+     * sequence arithmetic (see seqLessThanOrEqual in flow_manager.cpp).
+     */
+    uint32_t highestAcked = 0;
+
+    bool hasHighestAcked = false;
 };
 
 struct TcpFlow

@@ -63,9 +63,40 @@ bool PacketParser::parse(const std::string& filename)
         {
             printPacket(packet);
 
-            auto matches = flowManager.process(packet);
+            //------------------------------------------------
+            // Packet-level counters
+            //------------------------------------------------
 
-           for (const auto& match : matches)
+            bool isData =
+                packet.payloadLength > 0;
+
+            bool isPureAck =
+                packet.ack &&
+                packet.payloadLength == 0 &&
+                !packet.syn &&
+                !packet.fin &&
+                !packet.rst;
+
+            statistics.recordPacket(isData, isPureAck);
+
+            //------------------------------------------------
+            // Flow / retransmission / ACK-match processing
+            //------------------------------------------------
+
+            FlowProcessResult flowResult =
+                flowManager.process(packet);
+
+            if (flowResult.retransmission)
+            {
+                statistics.recordRetransmission();
+            }
+
+            if (flowResult.duplicateAck)
+            {
+                statistics.recordDuplicateAck();
+            }
+
+            for (const auto& match : flowResult.matches)
             {
                 statistics.add(match);
 

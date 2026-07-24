@@ -1,3 +1,4 @@
+import axios from "axios";
 import { Packet } from "../types/report";
 import StatusBadge from "./StatusBadge";
 
@@ -6,6 +7,20 @@ interface Props {
 }
 
 export default function PacketDetails({ packet }: Props) {
+    console.log(packet);
+    const openInWireshark = async () => {
+        if (!packet) return;
+
+        try {
+            await axios.post("http://localhost:5000/api/wireshark/open", {
+                packetNumber: packet.packetNumber,
+            });
+        } catch (error) {
+            console.error("Failed to open Wireshark:", error);
+            alert("Unable to open Wireshark.");
+        }
+    };
+
     if (!packet) {
         return (
             <div className="flex h-full flex-col items-center justify-center rounded-lg border border-[#1F2830] bg-[#10161D] p-8 text-center">
@@ -31,6 +46,7 @@ export default function PacketDetails({ packet }: Props) {
                 <h2 className="font-mono text-lg font-semibold tabular-nums text-[#E7EDF3]">
                     Packet #{packet.packetNumber}
                 </h2>
+
                 <StatusBadge
                     matched={packet.matched}
                     retransmission={packet.retransmission}
@@ -82,6 +98,13 @@ export default function PacketDetails({ packet }: Props) {
                         : "—"}
                 </Info>
             </div>
+
+            <button
+                onClick={openInWireshark}
+                className="mt-6 w-full rounded-lg bg-[#22D3C9] px-4 py-2 font-medium text-[#0A0E13] transition hover:bg-[#18b8ae]"
+            >
+                Open in Wireshark
+            </button>
         </div>
     );
 }

@@ -3,9 +3,7 @@
 #include "protocols.h"
 #include "flow_manager.h"
 #include "statistics.h"
-
 #include <pcap.h>
-
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
@@ -17,23 +15,15 @@ bool PacketParser::parse(
 {
     char errorBuffer[PCAP_ERRBUF_SIZE];
 
-    pcap_t* handle =
-        pcap_open_offline(filename.c_str(), errorBuffer);
+    pcap_t* handle = pcap_open_offline(filename.c_str(), errorBuffer);
 
     if (!handle)
     {
-        std::cerr << "Failed to open PCAP: "
-                  << errorBuffer
-                  << std::endl;
-
+        std::cerr << "Failed to open PCAP: " << errorBuffer << std::endl;
         return false;
     }
 
-    std::cout << "Opened PCAP: "
-              << filename
-              << std::endl
-              << std::endl;
-
+    std::cout << "Opened PCAP: " << filename << std::endl << std::endl;
     std::cout << "Datalink: " << pcap_datalink(handle) << std::endl;
 
     FlowManager flowManager;
@@ -50,9 +40,7 @@ bool PacketParser::parse(
     {
         packetNumber++;
 
-        double timestamp =
-            header->ts.tv_sec +
-            header->ts.tv_usec / 1000000.0;
+        double timestamp = header->ts.tv_sec + header->ts.tv_usec / 1000000.0;
 
         TcpPacket packet;
 
@@ -69,8 +57,7 @@ bool PacketParser::parse(
             // Packet-level counters
             //------------------------------------------------
 
-            bool isData =
-                packet.payloadLength > 0;
+            bool isData = packet.payloadLength > 0;
 
             bool isPureAck =
                 packet.ack &&
@@ -85,8 +72,7 @@ bool PacketParser::parse(
             // Flow / retransmission / ACK-match processing
             //------------------------------------------------
 
-            FlowProcessResult flowResult =
-                flowManager.process(packet);
+            FlowProcessResult flowResult = flowManager.process(packet);
 
             PacketRecord record;
 
@@ -121,9 +107,7 @@ bool PacketParser::parse(
             statistics.addPacket(record);
             for (const auto& match : flowResult.matches)
             {
-                statistics.markMatched(
-                    match.packetNumber,
-                    match.latency);
+                statistics.markMatched( match.packetNumber, match.latency);
 
                 statistics.add(match);
 
@@ -162,10 +146,7 @@ bool PacketParser::parse(
         }
     }
 
-    std::cout << "\nFinished reading "
-              << packetNumber
-              << " packets."
-              << std::endl;
+    std::cout << "\nFinished reading " << packetNumber << " packets." << std::endl;
 
     pcap_close(handle);
     statistics.print();
@@ -188,8 +169,7 @@ bool PacketParser::parsePacket(
     if (length < sizeof(EthernetHeader))
         return false;
 
-    const EthernetHeader* ethernet =
-        reinterpret_cast<const EthernetHeader*>(data);
+    const EthernetHeader* ethernet = reinterpret_cast<const EthernetHeader*>(data);
 
     unsigned int offset = sizeof(EthernetHeader);
     uint16_t etherType = ntohs(ethernet->etherType);
@@ -204,9 +184,7 @@ bool PacketParser::parsePacket(
             return false;
 
         // 2 bytes tag control info + 2 bytes real etherType
-        etherType =
-            ntohs(*reinterpret_cast<const uint16_t*>(
-                data + offset + 2));
+        etherType = ntohs(*reinterpret_cast<const uint16_t*> (data + offset + 2));
 
         offset += 4;
     }
@@ -225,8 +203,7 @@ bool PacketParser::parsePacket(
         reinterpret_cast<const IPv4Header*>(
             data + offset);
 
-    unsigned int ipHeaderLength =
-        (ip->versionIhl & 0x0F) * 4;
+    unsigned int ipHeaderLength = (ip->versionIhl & 0x0F) * 4;
 
     if (ip->protocol != 6)
         return false;
@@ -244,8 +221,7 @@ bool PacketParser::parsePacket(
             offset +
             ipHeaderLength);
 
-    unsigned int tcpHeaderLength =
-        ((tcp->dataOffset >> 4) & 0x0F) * 4;
+    unsigned int tcpHeaderLength = ((tcp->dataOffset >> 4) & 0x0F) * 4;
 
     //----------------------------------------------------
     // Populate TcpPacket

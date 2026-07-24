@@ -19,8 +19,7 @@ struct Endpoint
 
     bool operator==(const Endpoint& other) const
     {
-        return ip == other.ip &&
-               port == other.port;
+        return ip == other.ip && port == other.port;
     }
 };
 

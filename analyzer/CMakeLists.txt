@@ -50,7 +50,6 @@ target_link_libraries(
 
 if(WIN32)
 
-    # >>> CHANGE THIS TO YOUR Npcap SDK LOCATION <<<
     set(NPCAP_SDK "C:/Users/saditya/Downloads/npcap-sdk-1.16")
 
     if(NOT EXISTS "${NPCAP_SDK}/Include/pcap.h")

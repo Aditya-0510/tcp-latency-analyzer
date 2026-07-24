@@ -55,8 +55,7 @@ bool FlowManager::isForwardPacket(
     const FlowKey& key,
     const TcpPacket& packet)
 {
-    return packet.srcIp == key.first.ip &&
-           packet.srcPort == key.first.port;
+    return packet.srcIp == key.first.ip && packet.srcPort == key.first.port;
 }
 
 FlowProcessResult
@@ -112,14 +111,11 @@ FlowManager::process(const TcpPacket& packet)
     // Ignore pure control packets
     //------------------------------------------------------
 
-    bool carriesData =
-        packet.payloadLength > 0;
+    bool carriesData = packet.payloadLength > 0;
 
     if (carriesData)
     {
-        uint32_t expectedAck =
-            packet.sequenceNumber +
-            packet.payloadLength;
+        uint32_t expectedAck = packet.sequenceNumber + packet.payloadLength;
 
         if (packet.syn)
             expectedAck++;
@@ -155,8 +151,7 @@ FlowManager::process(const TcpPacket& packet)
 
         bool retransmission = false;
 
-        auto existing =
-            sendStream.outstanding.find(packet.sequenceNumber);
+        auto existing = sendStream.outstanding.find(packet.sequenceNumber);
 
         if (existing != sendStream.outstanding.end() &&
             existing->second.payloadLength == packet.payloadLength)
@@ -174,7 +169,6 @@ FlowManager::process(const TcpPacket& packet)
         if (retransmission)
         {
             sendStream.retransmissions++;
-
             result.retransmission = true;
 
             std::cout
@@ -191,23 +185,12 @@ FlowManager::process(const TcpPacket& packet)
 
         OutstandingSegment segment;
 
-        segment.packetNumber =
-            packet.packetNumber;
-
-        segment.sequenceNumber =
-            packet.sequenceNumber;
-
-        segment.expectedAck =
-            expectedAck;
-
-        segment.payloadLength =
-            packet.payloadLength;
-
-        segment.sendTime =
-            packet.timestamp;
-
-        segment.retransmitted =
-            retransmission;
+        segment.packetNumber = packet.packetNumber;
+        segment.sequenceNumber = packet.sequenceNumber;
+        segment.expectedAck = expectedAck;
+        segment.payloadLength = packet.payloadLength;
+        segment.sendTime = packet.timestamp;
+        segment.retransmitted = retransmission;
 
         /*
          * Keep the FIRST transmission.
@@ -218,9 +201,7 @@ FlowManager::process(const TcpPacket& packet)
 
         if (!retransmission)
         {
-            sendStream.outstanding.emplace(
-                segment.sequenceNumber,
-                segment);
+            sendStream.outstanding.emplace( segment.sequenceNumber, segment);
         }
     }
 
@@ -241,11 +222,9 @@ FlowManager::process(const TcpPacket& packet)
     // Duplicate ACK detection
     //------------------------------------------------------
 
-    if (packet.acknowledgementNumber ==
-        receiveStream.lastAck)
+    if (packet.acknowledgementNumber == receiveStream.lastAck)
     {
         receiveStream.duplicateAckCount++;
-
         result.duplicateAck = true;
 
         if (receiveStream.duplicateAckCount >= 3)
@@ -260,9 +239,7 @@ FlowManager::process(const TcpPacket& packet)
     }
     else
     {
-        receiveStream.lastAck =
-            packet.acknowledgementNumber;
-
+        receiveStream.lastAck = packet.acknowledgementNumber;
         receiveStream.duplicateAckCount = 1;
     }
 
@@ -274,12 +251,9 @@ FlowManager::process(const TcpPacket& packet)
     //------------------------------------------------------
 
     if (!receiveStream.hasHighestAcked ||
-        seqGreaterThan(packet.acknowledgementNumber,
-                       receiveStream.highestAcked))
+        seqGreaterThan(packet.acknowledgementNumber, receiveStream.highestAcked))
     {
-        receiveStream.highestAcked =
-            packet.acknowledgementNumber;
-
+        receiveStream.highestAcked = packet.acknowledgementNumber;
         receiveStream.hasHighestAcked = true;
     }
 
@@ -291,11 +265,9 @@ FlowManager::process(const TcpPacket& packet)
 
     while (it != receiveStream.outstanding.end())
     {
-        OutstandingSegment& segment =
-            it->second;
+        OutstandingSegment& segment = it->second;
 
-        if (seqGreaterThan(segment.expectedAck,
-                            packet.acknowledgementNumber))
+        if (seqGreaterThan(segment.expectedAck, packet.acknowledgementNumber))
         {
             ++it;
             continue;
@@ -303,32 +275,19 @@ FlowManager::process(const TcpPacket& packet)
 
         AckMatch match;
 
-        match.packetNumber =
-            segment.packetNumber;
-
-        match.sequenceNumber =
-            segment.sequenceNumber;
-
-        match.acknowledgementNumber =
-            packet.acknowledgementNumber;
-
-        match.sendTime =
-            segment.sendTime;
-
-        match.ackTime =
-            packet.timestamp;
-
-        match.latency =
-            packet.timestamp -
-            segment.sendTime;
+        match.packetNumber = segment.packetNumber;
+        match.sequenceNumber =  segment.sequenceNumber;
+        match.acknowledgementNumber = packet.acknowledgementNumber;
+        match.sendTime = segment.sendTime;
+        match.ackTime = packet.timestamp;
+        match.latency =packet.timestamp - segment.sendTime;
 
         if (match.latency >= 0.0)
         {
             result.matches.push_back(match);
         }
 
-        it =
-            receiveStream.outstanding.erase(it);
+        it = receiveStream.outstanding.erase(it);
     }
 
     return result;

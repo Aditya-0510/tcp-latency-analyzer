@@ -37,8 +37,7 @@ private:
     // Latency statistics
     uint64_t matchedPackets = 0;
 
-    double minLatency =
-        std::numeric_limits<double>::max();
+    double minLatency = std::numeric_limits<double>::max();
 
     double maxLatency = 0.0;
 

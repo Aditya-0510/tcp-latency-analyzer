@@ -35,7 +35,5 @@ private:
 
     FlowKey createFlowKey(const TcpPacket& packet);
 
-    bool isForwardPacket(
-        const FlowKey& key,
-        const TcpPacket& packet);
+    bool isForwardPacket( const FlowKey& key, const TcpPacket& packet);
 };

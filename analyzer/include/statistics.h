@@ -26,6 +26,8 @@ public:
 
     void exportJson(const std::string& filename) const;
 
+    void markMatched( uint64_t packetNumber, double latency);
+
 private:
 
     // Store all matched packets for JSON export

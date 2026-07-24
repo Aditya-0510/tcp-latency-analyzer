@@ -111,13 +111,31 @@ bool PacketParser::parse(
             record.retransmission = flowResult.retransmission;
             record.duplicateAck = flowResult.duplicateAck;
 
-            if (!flowResult.matches.empty())
-            {
-                record.matched = true;
-                record.latency = flowResult.matches.front().latency * 1000.0;
+            // if (!flowResult.matches.empty())
+            // {
+            //     record.matched = true;
+            //     record.latency = flowResult.matches.front().latency * 1000.0;
 
-            }
+            // }
+
             statistics.addPacket(record);
+            for (const auto& match : flowResult.matches)
+            {
+                statistics.markMatched(
+                    match.packetNumber,
+                    match.latency);
+
+                statistics.add(match);
+
+                std::cout
+                    << "ACK matched Packet #"
+                    << match.packetNumber
+                    << "  Latency = "
+                    << match.latency * 1000
+                    << " ms"
+                    << std::endl;
+            }
+            
 
             if (flowResult.retransmission)
             {
@@ -129,18 +147,18 @@ bool PacketParser::parse(
                 statistics.recordDuplicateAck();
             }
 
-            for (const auto& match : flowResult.matches)
-            {
-                statistics.add(match);
+            // for (const auto& match : flowResult.matches)
+            // {
+            //     statistics.add(match);
 
-                std::cout
-                    << "ACK matched Packet #"
-                    << match.packetNumber
-                    << "  Latency = "
-                    << match.latency * 1000
-                    << " ms"
-                    << std::endl;
-            }
+            //     std::cout
+            //         << "ACK matched Packet #"
+            //         << match.packetNumber
+            //         << "  Latency = "
+            //         << match.latency * 1000
+            //         << " ms"
+            //         << std::endl;
+            // }
         }
     }
 

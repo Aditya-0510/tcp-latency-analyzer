@@ -168,3 +168,18 @@ void Statistics::addPacket(const PacketRecord& packet)
 {
     packets.push_back(packet);
 }
+
+void Statistics::markMatched(
+    uint64_t packetNumber,
+    double latency)
+{
+    for (auto& packet : packets)
+    {
+        if (packet.packetNumber == packetNumber)
+        {
+            packet.matched = true;
+            packet.latency = latency * 1000.0;
+            break;
+        }
+    }
+}

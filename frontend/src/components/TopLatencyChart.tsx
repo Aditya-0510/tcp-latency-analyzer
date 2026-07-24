@@ -1,11 +1,11 @@
 import {
     ResponsiveContainer,
-    LineChart,
-    Line,
+    BarChart,
+    Bar,
+    CartesianGrid,
     XAxis,
     YAxis,
     Tooltip,
-    CartesianGrid,
 } from "recharts";
 
 import { Packet } from "../types/report";
@@ -17,9 +17,11 @@ interface Props {
 
 const AXIS_STYLE = { fontSize: 11, fill: "#5B6774" };
 
-export default function LatencyChart({ packets }: Props) {
-    const data = packets
+export default function TopLatencyChart({ packets }: Props) {
+    const data = [...packets]
         .filter((p) => p.matched)
+        .sort((a, b) => b.latency - a.latency)
+        .slice(0, 10)
         .map((p) => ({
             packet: p.packetNumber,
             latency: Number(p.latency.toFixed(3)),
@@ -28,11 +30,11 @@ export default function LatencyChart({ packets }: Props) {
     return (
         <div className="rounded-lg border border-[#1F2830] bg-[#10161D] p-5">
             <h2 className="mb-4 text-xs font-semibold uppercase tracking-wide text-[#8FA3AE]">
-                ACK Latency Trend
+                Top 10 Highest ACK Latencies
             </h2>
 
             <ResponsiveContainer width="100%" height={320}>
-                <LineChart data={data}>
+                <BarChart data={data}>
                     <CartesianGrid
                         strokeDasharray="3 3"
                         stroke="#1F2830"
@@ -55,18 +57,16 @@ export default function LatencyChart({ packets }: Props) {
                     />
 
                     <Tooltip
-                        cursor={{ stroke: "#2A3540" }}
+                        cursor={{ fill: "#161D26" }}
                         content={<ChartTooltip unit=" ms" />}
                     />
 
-                    <Line
+                    <Bar
                         dataKey="latency"
-                        stroke="#22D3C9"
-                        strokeWidth={2}
-                        dot={false}
-                        activeDot={{ r: 4, fill: "#22D3C9" }}
+                        fill="#22D3C9"
+                        radius={[3, 3, 0, 0]}
                     />
-                </LineChart>
+                </BarChart>
             </ResponsiveContainer>
         </div>
     );

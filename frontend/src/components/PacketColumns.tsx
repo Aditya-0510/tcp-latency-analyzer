@@ -2,26 +2,45 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Packet } from "../types/report";
 import StatusBadge from "./StatusBadge";
 
+function FlagChip({ flag }: { flag: string }) {
+    return (
+        <span className="rounded border border-[#1F2830] bg-[#161D26] px-1.5 py-0.5 font-mono text-[10px] font-medium tracking-wide text-[#8FA3AE]">
+            {flag}
+        </span>
+    );
+}
+
+function getFlags(row: Packet) {
+    const flags: string[] = [];
+    if (row.syn) flags.push("SYN");
+    if (row.ack) flags.push("ACK");
+    if (row.psh) flags.push("PSH");
+    if (row.fin) flags.push("FIN");
+    if (row.rst) flags.push("RST");
+    if (row.urg) flags.push("URG");
+    return flags;
+}
+
 export const columns: ColumnDef<Packet>[] = [
     {
         accessorKey: "packetNumber",
         header: "Packet",
         cell: ({ getValue }) => (
-            <span className="font-medium">{getValue<number>()}</span>
+            <span className="font-mono text-sm tabular-nums text-[#5B6774]">
+                {getValue<number>()}
+            </span>
         ),
     },
 
     {
         id: "source",
         header: "Source",
-
         accessorFn: (row) => `${row.srcIp} ${row.srcPort}`,
-
         cell: ({ row }) => (
-            <div>
-                <div>{row.original.srcIp}</div>
-                <div className="text-xs text-slate-500">
-                    {row.original.srcPort}
+            <div className="font-mono text-sm tabular-nums">
+                <div className="text-[#E7EDF3]">{row.original.srcIp}</div>
+                <div className="text-xs text-[#5B6774]">
+                    :{row.original.srcPort}
                 </div>
             </div>
         ),
@@ -30,71 +49,58 @@ export const columns: ColumnDef<Packet>[] = [
     {
         id: "destination",
         header: "Destination",
-
         accessorFn: (row) => `${row.dstIp} ${row.dstPort}`,
-
         cell: ({ row }) => (
-            <div>
-                <div>{row.original.dstIp}</div>
-                <div className="text-xs text-slate-500">
-                    {row.original.dstPort}
+            <div className="font-mono text-sm tabular-nums">
+                <div className="text-[#E7EDF3]">{row.original.dstIp}</div>
+                <div className="text-xs text-[#5B6774]">
+                    :{row.original.dstPort}
                 </div>
             </div>
         ),
     },
 
-    {
-        accessorKey: "sequenceNumber",
-        header: "Sequence",
-    },
+    // {
+    //     accessorKey: "sequenceNumber",
+    //     header: "Sequence",
+    //     cell: ({ getValue }) => (
+    //         <span className="font-mono text-sm tabular-nums text-[#8FA3AE]">
+    //             {getValue<number>()}
+    //         </span>
+    //     ),
+    // },
 
-    {
-        accessorKey: "acknowledgementNumber",
-        header: "Acknowledgement",
-    },
+    // {
+    //     accessorKey: "acknowledgementNumber",
+    //     header: "Acknowledgement",
+    //     cell: ({ getValue }) => (
+    //         <span className="font-mono text-sm tabular-nums text-[#8FA3AE]">
+    //             {getValue<number>()}
+    //         </span>
+    //     ),
+    // },
 
     {
         accessorKey: "payloadLength",
         header: "Payload",
+        cell: ({ getValue }) => (
+            <span className="font-mono text-sm tabular-nums text-[#8FA3AE]">
+                {getValue<number>()}
+                <span className="ml-1 text-[#5B6774]">B</span>
+            </span>
+        ),
     },
 
     {
         id: "flags",
-
         header: "Flags",
-
-        accessorFn: (row) => {
-            const flags = [];
-
-            if (row.syn) flags.push("SYN");
-            if (row.ack) flags.push("ACK");
-            if (row.psh) flags.push("PSH");
-            if (row.fin) flags.push("FIN");
-            if (row.rst) flags.push("RST");
-            if (row.urg) flags.push("URG");
-
-            return flags.join(" ");
-        },
-
+        accessorFn: (row) => getFlags(row).join(" "),
         cell: ({ row }) => {
-            const flags = [];
-
-            if (row.original.syn) flags.push("SYN");
-            if (row.original.ack) flags.push("ACK");
-            if (row.original.psh) flags.push("PSH");
-            if (row.original.fin) flags.push("FIN");
-            if (row.original.rst) flags.push("RST");
-            if (row.original.urg) flags.push("URG");
-
+            const flags = getFlags(row.original);
             return (
                 <div className="flex flex-wrap gap-1">
                     {flags.map((flag) => (
-                        <span
-                            key={flag}
-                            className="rounded bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700"
-                        >
-                            {flag}
-                        </span>
+                        <FlagChip key={flag} flag={flag} />
                     ))}
                 </div>
             );
@@ -103,27 +109,22 @@ export const columns: ColumnDef<Packet>[] = [
 
     {
         id: "latency",
-
         header: "Latency",
-
-        accessorFn: (row) =>
-            row.matched ? row.latency : -1,
-
+        accessorFn: (row) => (row.matched ? row.latency : -1),
         cell: ({ row }) =>
             row.original.matched ? (
-                <span className="font-medium text-green-600">
-                    {row.original.latency.toFixed(3)} ms
+                <span className="font-mono text-sm tabular-nums text-[#E7EDF3]">
+                    {row.original.latency.toFixed(3)}
+                    <span className="ml-1 text-[#5B6774]">ms</span>
                 </span>
             ) : (
-                <span className="text-slate-400">—</span>
+                <span className="font-mono text-sm text-[#3A4551]">—</span>
             ),
     },
 
     {
         id: "status",
-
         header: "Status",
-
         cell: ({ row }) => (
             <StatusBadge
                 matched={row.original.matched}

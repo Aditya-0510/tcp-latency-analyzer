@@ -9,8 +9,7 @@ export default function SummaryCards({
     summary,
 }: SummaryCardsProps) {
     return (
-        <section className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-
+        <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <SummaryCard
                 title="Total TCP Packets"
                 value={summary.totalTcpPackets}
@@ -29,16 +28,19 @@ export default function SummaryCards({
             <SummaryCard
                 title="Matched Packets"
                 value={summary.matchedPackets}
+                accent="success"
             />
 
             <SummaryCard
                 title="Retransmissions"
                 value={summary.retransmissions}
+                accent={summary.retransmissions > 0 ? "danger" : "default"}
             />
 
             <SummaryCard
                 title="Duplicate ACKs"
                 value={summary.duplicateAcks}
+                accent={summary.duplicateAcks > 0 ? "warning" : "default"}
             />
 
             <SummaryCard
@@ -52,7 +54,6 @@ export default function SummaryCards({
                 value={summary.maximumLatency.toFixed(2)}
                 unit="ms"
             />
-
         </section>
     );
 }

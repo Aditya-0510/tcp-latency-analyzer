@@ -4,9 +4,10 @@ import StatusBadge from "./StatusBadge";
 
 interface Props {
     packet: Packet | null;
+    captureFile: string;
 }
 
-export default function PacketDetails({ packet }: Props) {
+export default function PacketDetails({ packet, captureFile }: Props) {
     console.log(packet);
     const openInWireshark = async () => {
         if (!packet) return;
@@ -14,6 +15,7 @@ export default function PacketDetails({ packet }: Props) {
         try {
             await axios.post("http://localhost:5000/api/wireshark/open", {
                 packetNumber: packet.packetNumber,
+                captureFile,
             });
         } catch (error) {
             console.error("Failed to open Wireshark:", error);

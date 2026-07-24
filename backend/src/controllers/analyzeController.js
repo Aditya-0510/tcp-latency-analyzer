@@ -15,7 +15,8 @@ const analyze = async (req, res, next) => {
         await analyzerService.runAnalyzer(req.file.path);
 
         const report = await reportService.getLatestReport();
-
+        report.captureFile = req.file.filename;
+        
         res.status(200).json({
             success: true,
             report

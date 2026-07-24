@@ -42,6 +42,7 @@ export interface Summary {
 }
 
 export interface AnalysisReport {
+    captureFile: string;
     summary: Summary;
     packets: Packet[];
 }

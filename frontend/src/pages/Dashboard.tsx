@@ -14,25 +14,62 @@ import TopLatencyChart from "../components/TopLatencyChart";
 export default function Dashboard() {
     const [report, setReport] = useState<AnalysisReport | null>(null);
 
-    const [selectedPacket, setSelectedPacket] =
-        useState<Packet | null>(null);
+    const [selectedPacket, setSelectedPacket] = useState<Packet | null>(null);
 
     const [latencyThreshold, setLatencyThreshold] = useState<number | null>(null);
+
+    type StatusFilter =
+        | "all"
+        | "normal"
+        | "matched"
+        | "duplicateAck"
+        | "retransmission";
+
+    const [statusFilter, setStatusFilter] =
+        useState<StatusFilter>("all");
 
     const filteredPackets = useMemo(() => {
         if (!report) return [];
 
-        // No filter -> show everything
-        if (latencyThreshold === null) {
-            return report.packets;
-        }
+        return report.packets.filter(packet => {
 
-        return report.packets.filter(
-            (packet) =>
-                packet.matched &&
-                packet.latency >= latencyThreshold
-        );
-    }, [report, latencyThreshold]);
+            // Status filter
+            switch (statusFilter) {
+                case "matched":
+                    if (!packet.matched) return false;
+                    break;
+
+                case "duplicateAck":
+                    if (!packet.duplicateAck) return false;
+                    break;
+
+                case "retransmission":
+                    if (!packet.retransmission) return false;
+                    break;
+
+                case "normal":
+                    if (
+                        packet.matched ||
+                        packet.duplicateAck ||
+                        packet.retransmission
+                    ) {
+                        return false;
+                    }
+                    break;
+            }
+
+            // Latency filter
+            if (
+                latencyThreshold !== null &&
+                (!packet.matched ||
+                    packet.latency < latencyThreshold)
+            ) {
+                return false;
+            }
+
+            return true;
+        });
+    }, [report, latencyThreshold, statusFilter]);
 
     return (
         <div className="min-h-screen bg-[#0A0E13]">
@@ -84,7 +121,14 @@ export default function Dashboard() {
 
                 </header>
 
-                <FileUpload onAnalysisComplete={setReport} />
+                <FileUpload
+                    onAnalysisComplete={(newReport) => {
+                        setReport(newReport);
+                        setSelectedPacket(null);
+                        setLatencyThreshold(null);
+                        setStatusFilter("all");
+                    }}
+                />
 
                 {report ? (
                     <div className="mt-8 space-y-6">
@@ -115,6 +159,28 @@ export default function Dashboard() {
 
                             <div className="lg:col-span-8">
 
+                                <div className="mb-3 flex items-center justify-end gap-2">
+
+                                    <label className="text-sm text-slate-400">
+                                        Status
+                                    </label>
+
+                                    <select
+                                        value={statusFilter}
+                                        onChange={(e) =>
+                                            setStatusFilter(e.target.value as StatusFilter)
+                                        }
+                                        className="rounded-lg border border-slate-700 bg-[#111827] px-3 py-2 text-sm text-white"
+                                    >
+                                        <option value="all">All</option>
+                                        <option value="normal">Normal</option>
+                                        <option value="matched">Matched</option>
+                                        <option value="duplicateAck">Duplicate ACK</option>
+                                        <option value="retransmission">Retransmission</option>
+                                    </select>
+
+                                </div>
+
                                 <PacketTable
                                     packets={filteredPackets}
                                     onSelectPacket={setSelectedPacket}
@@ -127,6 +193,7 @@ export default function Dashboard() {
 
                                 <PacketDetails
                                     packet={selectedPacket}
+                                    captureFile={report.captureFile}
                                 />
 
                             </div>

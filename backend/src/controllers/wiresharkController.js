@@ -4,12 +4,19 @@ const { spawn } = require("child_process");
 
 const openPacket = async (req, res) => {
     try {
-        const packetNumber = req.body?.packetNumber;
+        const { packetNumber, captureFile } = req.body;
 
         if (!packetNumber) {
             return res.status(400).json({
                 success: false,
                 message: "Packet number is required.",
+            });
+        }
+
+        if (!captureFile) {
+            return res.status(400).json({
+                success: false,
+                message: "Capture file is required.",
             });
         }
 
@@ -23,38 +30,14 @@ const openPacket = async (req, res) => {
         }
 
         const uploadsDir = path.join(__dirname, "..", "uploads");
-        console.log("Uploads dir:", uploadsDir);
-        console.log("Exists:", fs.existsSync(uploadsDir));
-        console.log("Files:", fs.readdirSync(uploadsDir));
+        const pcapPath = path.join(uploadsDir, captureFile);
 
-        if (!fs.existsSync(uploadsDir)) {
+        if (!fs.existsSync(pcapPath)) {
             return res.status(404).json({
                 success: false,
-                message: "Uploads directory not found.",
+                message: "Capture file not found.",
             });
         }
-
-        const pcapFiles = fs.readdirSync(uploadsDir).filter(file => {
-            const ext = path.extname(file).toLowerCase();
-            return [".pcap", ".pcapng"].includes(ext);
-        });
-
-        if (pcapFiles.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "No PCAP file found.",
-            });
-        }
-
-        // Latest uploaded capture
-        const latestPcap = pcapFiles
-            .map(file => ({
-                file,
-                time: fs.statSync(path.join(uploadsDir, file)).mtimeMs,
-            }))
-            .sort((a, b) => b.time - a.time)[0];
-
-        const pcapPath = path.join(uploadsDir, latestPcap.file);
 
         console.log("Opening:", pcapPath);
         console.log("Packet:", packetNumber);
@@ -76,16 +59,17 @@ const openPacket = async (req, res) => {
 
         wireshark.unref();
 
-        return res.json({
+        return res.status(200).json({
             success: true,
-            message: "Wireshark launched.",
+            message: `Opened packet ${packetNumber} in Wireshark.`,
+            captureFile
         });
-    } catch (err) {
-        console.error(err);
+    } catch (error) {
+        console.error(error);
 
         return res.status(500).json({
             success: false,
-            message: err.message,
+            message: error.message,
         });
     }
 };

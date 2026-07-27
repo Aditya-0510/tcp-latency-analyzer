@@ -167,7 +167,7 @@ Generate Report
 # Clone Repository
 
 ```bash
-git clone https://github.com/<username>/tcp-ack-latency-analyzer.git
+git clone https://github.com/<username>/tcp-latency-analyzer.git
 
 cd tcp-latency-analyzer
 ```
@@ -345,19 +345,3 @@ Example
 - Duplicate ACK
 
 ---
-
-# Future Improvements
-
-- Multi-threaded packet processing
-- Flow-level analytics
-- CSV export
-- Linux packaging
-- Live capture support
-- TCP RTT distribution graphs
-- Flow statistics dashboard
-
----
-
-# License
-
-This project is intended for educational and research purposes.
